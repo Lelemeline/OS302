@@ -16,5 +16,11 @@ Client serveur pas très difficile hormis une difficulté : mon serveur attends 
 Sinon, il attendait indéfiniment mais sans lire ce que pouvaient envoyer les clients ( alors que ces derniers écrivaient bien dans le tube).
 Résultat : plus d'une heure pour débuguer, j'ai fini par péter mon crâne.
 
+Actualisation le 02/04 : pour que le serveur lise en continu, il faut penser que le client ferme à chaque fin d'exécution son fichier fd,
+à savoir le fichier que lit de l'autre côté le serveur...
+Donc dans le while(1) on pense à rajouter l'ouverture du fichier.
+
+Et j'ai rajouté non seulement une jolie présentation mais aussi un moeyn de fermer proprement le serveur.
+
 ## TP4
 en cours ...

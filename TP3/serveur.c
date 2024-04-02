@@ -29,7 +29,7 @@ int main(void){
         }
 
         while (fgets(s, BUFSIZE, fd) != NULL) { // Lecture depuis le tube FIFO
-            if(strcmp(s,"quit")==0){ // condition pour fermer le serveur
+            if(strcmp(s,"quit")==0){ // condition pour fermer le serveur "./client quit"
                 printf("\033[31;01m==========================Fermeture du serveur=================================\033[00m\n");
                 free(s); // Libération de la mémoire après utilisation
                 fclose(fd);
