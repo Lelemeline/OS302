@@ -33,7 +33,7 @@ int main(){
             }
             for(int i=0;i<msg.txt.taille;i++){
                 // si le caractère est en minuscule -> Majuscule
-                if((msg.txt.message[i]>=97) && (msg.txt.message[i]<=122)){ 
+                if((msg.txt.message[i]>=97) && (msg.txt.message[i]<=122)){
                     msg.txt.message[i] -= 32;
                 }
             }
