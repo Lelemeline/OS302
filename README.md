@@ -32,3 +32,8 @@ Version Hugo
 client-serveur1 : fonctionne
 client-serveur2 : mauvaise réception/traitement du message. À mon sens, vient de l'utilisation de msgrcv.
 
+[03/04]
+plus tard... Le client-serveur2 fonctionne, il fallait fixer une taille de chaine dans la structure msg.trad. ( je n'ai aps réussi sans)
+Donc c'est fixé à 100, avec #define ( c'est pas si mal)
+j'ai voulu un peu délirer donc y a une jolie présentation avec un ptit makefile tout propre ( j'avais envie d'un taff  un peu propre)
+
