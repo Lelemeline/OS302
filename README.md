@@ -37,3 +37,7 @@ plus tard... Le client-serveur2 fonctionne, il fallait fixer une taille de chain
 Donc c'est fixé à 100, avec #define ( c'est pas si mal)
 j'ai voulu un peu délirer donc y a une jolie présentation avec un ptit makefile tout propre ( j'avais envie d'un taff  un peu propre)
 
+# TP5
+[03/04]
+Exercice 1 fonctionne je crois. ( en tout cas compile et fonctionne maintenant est ce que y a pas une embrouille à la moi, jsp?)
+

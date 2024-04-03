@@ -61,7 +61,11 @@ int afficher_info_segment(int shmid){
  * shmid : l'identificateur du segment
  * retourn -1 en cas d'erreur */
 int detruire_segment(int shmid){
-
+  if(shmctl(shmid,IPC_RMID,NULL)==-1){
+    perror("Erreur de suppresion");
+    exit(-1);
+  }
+  return 0;
 }
 
 int main() {
@@ -70,6 +74,6 @@ int main() {
   nom = "exo1.c" ;
   shmid = cree_segment(100,nom,2) ;
   afficher_info_segment(shmid) ;
-  //detruire_segment(shmid) ;
+  detruire_segment(shmid) ;
   return 0 ;
 }
