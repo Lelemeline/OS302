@@ -4,18 +4,28 @@
  *********************************************************************/
 #include <string.h>
 #include <unistd.h>
+#include <wait.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
 #include "segment_memoire.h"
 
 int main() {
-  
+
   int pid;      // le PID du processus
   char *mem;    // pointeur vers le segment memoire
   int shmid;    // l'identificateur du segment memoire
   char *nom = (char *) malloc(15*sizeof(char));
   nom = "exo2.c";
-
-  // a completer : creation du segment de memoire partagee
-  // ...
+  int cle = 2 ;
+  int status;
+  char chaine[50];
+  printf("Écrire un message court [<50 caractères]\n");
+  scanf("%s",&chaine);
+  // creation du segment de memoire partagee
+  if((shmid = cree_segment(100,nom,cle))==-1){
+    perror("Création du segment mémoire");
+    exit(EXIT_FAILURE);
+  }
 
   // creation du processus fils
   pid = fork();
@@ -27,14 +37,24 @@ int main() {
     sleep(2);
     // je suis le fils!
     // a completer : s'attacher au segment et affichage de son contenu
-    // ...
+    shmat(shmid,&mem,SHM_RDONLY);
+    printf("contenu du segment mémoire : %s\n",mem);
   }
   else {
     // je suis le pere!
     // a completer : attachement et ecriture sur le segment de memoire partagee
     // a completer : attendre la fin du fils + detacher le segment et le detruire
     // ...
+    shmat(shmid,&mem,0);
+    pid_t ret ;
+    if((ret = waitpid(pid, &status, WUNTRACED ))==-1){
+      perror("erreur de wait");
+    }
+    sprintf(mem,chaine);
+    
+  shmdt(mem);
+  shmctl(shmid, IPC_RMID, 0);
   }
-          
+
   return 0 ;
 }
