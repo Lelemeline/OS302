@@ -40,4 +40,11 @@ j'ai voulu un peu délirer donc y a une jolie présentation avec un ptit makefil
 # TP5
 [03/04]
 Exercice 1 fonctionne je crois. ( en tout cas compile et fonctionne maintenant est ce que y a pas une embrouille à la moi, jsp?)
+https://www.delftstack.com/fr/howto/c/shmget-example-in-c/
+super site.
+[08/04]
+Exercice 2 qui fonctionne. Je me suis un peu battue avec mais rien de très grave.
 
+#TP6 
+[08/04]
+à faire...
