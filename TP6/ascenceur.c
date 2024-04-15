@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
             mem1 = shmat(shmid1, NULL, 0);
             // Écriture du PID du fils dans le segment mémoire
             pid_t fils1 = getpid();
+            printf("Le pid du premier fils est %i\n",fils1);
             sprintf(mem1, "%d", fils1);
             // Détachement du segment mémoire
             shmdt(mem1);
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]) {
             // Écriture du PID du fils dans le segment mémoire
             pid_t fils2 = getpid();
             sprintf(mem2, "%d", fils2);
+            printf("Le pid du deuxième fils est %i\n",fils2);
             // Détachement du segment mémoire
             shmdt(mem2);
             semop(sem_id,&asc,1);
@@ -102,15 +104,15 @@ int main(int argc, char *argv[]) {
 
     mem1 = shmat(shmid1,NULL,0); // attache au segment mémoire
     mem2 = shmat(shmid2,NULL,0); // attache au segment mémoire
-    //printf("Montée dans l'ascenceur de deux fils de pid %s et %s\n", mem1,mem2);
-    if(semctl(sem_id,0,GETVAL)==2){
+    printf("valeur de get val %i\n",(semctl(sem_id,0,GETVAL)));
+    // if(semctl(sem_id,0,GETVAL)==2){
         printf("Les deux ouvriers de pid %s et %s sont montés\n",mem1,mem2);
         semop(sem_id,&asc_rst,1);
         // Suppression des segments de mémoire partagée
         shmctl(shmid1, IPC_RMID, 0);
         shmctl(shmid2, IPC_RMID, 0);
         nombre_ouvriers -=2;
-    }
+    //}
     }
 
     return 0;
