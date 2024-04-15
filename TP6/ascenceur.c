@@ -39,18 +39,20 @@ int main(int argc, char *argv[]) {
         perror("Usage : ./exo2 <nombre d'ouvriers>");
         exit(EXIT_FAILURE);
     }
-
     int nombre_ouvriers = atoi(argv[1]);
 
     //création d'un sémaphore
     int sem_id= semget(ftok(nom,cle),1,IPC_CREAT|0600);
     semctl(sem_id,1,SETVAL,0);
+    struct sembuf asc = {sem_id,1,0}; //strucutre sem_oper de l'ascenceur
+    struct sembuf asc_rst = {sem_id,-2,0};
 
     // Création des segments de mémoire partagée pour chaque fils
     if ((shmid1 = cree_segment(100, nom, cle)) == -1 || (shmid2 = cree_segment(100, nom, cle)) == -1) {
         perror("Création du segment mémoire");
         exit(EXIT_FAILURE);
     }
+    printf("jusque là tout va bien\n");
     while(nombre_ouvriers>0){
     // Création du premier fils
     switch (pid1 = fork()) {
@@ -66,7 +68,7 @@ int main(int argc, char *argv[]) {
             sprintf(mem1, "%d", fils1);
             // Détachement du segment mémoire
             shmdt(mem1);
-            semctl(sem_id,1,SETVAL,1);
+            semop(sem_id,&asc,1);
             exit(EXIT_SUCCESS);
             break;
         default: // Père
@@ -87,7 +89,7 @@ int main(int argc, char *argv[]) {
             sprintf(mem2, "%d", fils2);
             // Détachement du segment mémoire
             shmdt(mem2);
-            semctl(sem_id,1,SETVAL,2);
+            semop(sem_id,&asc,1);
             exit(EXIT_SUCCESS);
             break;
         default: // Père
@@ -95,16 +97,15 @@ int main(int argc, char *argv[]) {
     }
     // comportement du père
     // Attente de la fin de l'exécution des fils
-    waitpid(pid1, &status, WUNTRACED);
-    waitpid(pid2, &status, WUNTRACED);
+    // waitpid(pid1, &status, WUNTRACED);
+    // waitpid(pid2, &status, WUNTRACED);
 
     mem1 = shmat(shmid1,NULL,0); // attache au segment mémoire
     mem2 = shmat(shmid2,NULL,0); // attache au segment mémoire
-    struct sembuf asc = {sem_id,1,0}; //strucutre sem_oper de l'ascenceur
     //printf("Montée dans l'ascenceur de deux fils de pid %s et %s\n", mem1,mem2);
-    if(semctl(sem_id,1,GETVAL)==2){
+    if(semctl(sem_id,0,GETVAL)==2){
         printf("Les deux ouvriers de pid %s et %s sont montés\n",mem1,mem2);
-        semctl(sem_id,1,SETVAL,0);
+        semop(sem_id,&asc_rst,1);
         // Suppression des segments de mémoire partagée
         shmctl(shmid1, IPC_RMID, 0);
         shmctl(shmid2, IPC_RMID, 0);
