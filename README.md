@@ -50,7 +50,7 @@ super site.
 [08/04]
 Exercice 2 qui fonctionne. Je me suis un peu battue avec mais rien de très grave.
 
-#TP6 
+# TP6 
 Ascenceur : manipulation de segments de mémoire partagé et de sémaphores ( plus grosses difficultés)
 [08/04]
 à faire...
