@@ -1,119 +1,111 @@
-#include <string.h>
 #include <stdio.h>
+#include <signal.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
-#include <wait.h>
-#include <sys/shm.h>
-#include <sys/stat.h>
+#include <err.h>
+#include <sys/wait.h>
 #include <sys/sem.h>
 #include <sys/ipc.h>
 #include <sys/types.h>
+#include <sys/shm.h>
 
-int cree_segment(int taille, char* nom, int cle) {
-    key_t mem_clef;
-    if ((mem_clef = ftok(nom,cle)) == -1) {
-        perror("Erreur de création de clé");
-        exit(EXIT_FAILURE);
-    }
-    int segment;
-    if ((segment = shmget(mem_clef, taille, IPC_CREAT | 0644)) == -1) {
-        perror("Erreur de création de segment");
-        return -1;
-    }
-    return segment;
+
+void safeKill(int sem_id){
+    semctl(sem_id, 0, IPC_RMID);
+
+    exit(0);
 }
 
-int main(int argc, char *argv[]) {
-    // Définition des variables
-    int pid1, pid2;     // PIDs des processus fils
-    char *mem1 = malloc(5*sizeof(int));
-    char *mem2 = malloc(5*sizeof(int));
-    // Pointeurs vers les segments mémoire
-    int shmid1, shmid2; // Identificateurs des segments mémoire
-    char nom[12] = "ascenceur.c";
-    int cle = 2; // Clés pour la création des segments de mémoire
-    int status;
-
-    //gestion de l'erreur usage
-    if (argc != 2) {
-        perror("Usage : ./exo2 <nombre d'ouvriers>");
-        exit(EXIT_FAILURE);
+int main (int argc, char *argv[]){
+    // gestion d'erreur
+    if(argc!=2){
+        perror("Nombre d'arguments incorrect");
     }
-    int nombre_ouvriers = atoi(argv[1]);
+    int n = atoi(argv[1]); // nombre d'ouvriers
+    int max = n;
+    pid_t pid = 2;
 
-    //création d'un sémaphore
-    int sem_id= semget(ftok(nom,cle),1,IPC_CREAT|0600);
-    semctl(sem_id,1,SETVAL,0);
-    struct sembuf asc = {sem_id,1,0}; //strucutre sem_oper de l'ascenceur
-    struct sembuf asc_rst = {sem_id,-2,0};
-
-    // Création des segments de mémoire partagée pour chaque fils
-    if ((shmid1 = cree_segment(100, nom, cle)) == -1 || (shmid2 = cree_segment(100, nom, cle)) == -1) {
-        perror("Création du segment mémoire");
-        exit(EXIT_FAILURE);
+    // création et initialisation du sémaphore
+    char *nom_clef = "clef";
+    key_t clef = ftok(nom_clef,2);
+    if(clef <0) perror("Erreur de clef");
+    int sem_id;
+    if((sem_id = semget(clef,1,IPC_CREAT| 0400 | 0200))==-1){
+        perror("Erreur semget");
+        safeKill(sem_id);
     }
-    printf("jusque là tout va bien\n");
-    while(nombre_ouvriers>0){
-    // Création du premier fils
-    switch (pid1 = fork()) {
-        case -1:
-            perror("Impossible de créer un processus fils!");
-            exit(-1);
-            break;
-        case 0: // Fils 1
-            // Attachement au segment mémoire
-            mem1 = shmat(shmid1, NULL, 0);
-            // Écriture du PID du fils dans le segment mémoire
-            pid_t fils1 = getpid();
-            printf("Le pid du premier fils est %i\n",fils1);
-            sprintf(mem1, "%d", fils1);
-            // Détachement du segment mémoire
-            shmdt(mem1);
-            semop(sem_id,&asc,1);
-            exit(EXIT_SUCCESS);
-            break;
-        default: // Père
-            break;
+    struct sembuf buf ;
+    buf.sem_num = 0;
+    buf.sem_op = -1;
+    buf.sem_flg = SEM_UNDO;
+    if(semctl(sem_id,0,SETVAL,2)==-1){
+        perror("Erreur SETVAL");
+        safeKill(sem_id);
+
     }
 
-    // Création du deuxième fils
-    switch (pid2 = fork()) {
-        case -1:
-            perror("Impossible de créer un processus fils!");
-            exit(-1);
-            break;
-        case 0: // Fils 2
-            // Attachement au segment mémoire
-            mem2 = shmat(shmid2, NULL, 0);
-            // Écriture du PID du fils dans le segment mémoire
-            pid_t fils2 = getpid();
-            sprintf(mem2, "%d", fils2);
-            printf("Le pid du deuxième fils est %i\n",fils2);
-            // Détachement du segment mémoire
-            shmdt(mem2);
-            semop(sem_id,&asc,1);
-            exit(EXIT_SUCCESS);
-            break;
-        default: // Père
-            break;
-    }
-    // comportement du père
-    // Attente de la fin de l'exécution des fils
-    // waitpid(pid1, &status, WUNTRACED);
-    // waitpid(pid2, &status, WUNTRACED);
-
-    mem1 = shmat(shmid1,NULL,0); // attache au segment mémoire
-    mem2 = shmat(shmid2,NULL,0); // attache au segment mémoire
-    printf("valeur de get val %i\n",(semctl(sem_id,0,GETVAL)));
-    // if(semctl(sem_id,0,GETVAL)==2){
-        printf("Les deux ouvriers de pid %s et %s sont montés\n",mem1,mem2);
-        semop(sem_id,&asc_rst,1);
-        // Suppression des segments de mémoire partagée
-        shmctl(shmid1, IPC_RMID, 0);
-        shmctl(shmid2, IPC_RMID, 0);
-        nombre_ouvriers -=2;
-    //}
+    // création du segment de mémoire partagée
+    int shm_id;
+    if((shm_id = shmget(clef,2*sizeof(pid_t),IPC_CREAT| 0400 | 0200))==-1){
+        perror("Erreur création de segment");
+        safeKill(sem_id);
     }
 
-    return 0;
+    void *adresse_segment = shmat(shm_id,NULL,SHM_RND); // attachement du segment
+    pid_t* pointeur =  (pid_t*) adresse_segment;
+    pointeur[0] = 0;
+    pointeur[1] = 0;
+
+
+    // création des n fils
+    while((pid = fork())!=0 && n>0){
+        if(pid==-1) {
+            perror("Erreur de fork");
+            safeKill(sem_id);}
+        n-=1;
+    }
+
+
+    if(pid == 0){ // code fils
+        if(semop(sem_id,&buf,1)==-1){
+            perror ("Erreur opération de sémaphore");
+            return 0;
+        }
+        if(pointeur[0]!=0){
+            pointeur[1] = getpid();
+            printf("Je viens de monter dans l'ascenseur [%d]\n", getpid());
+        }
+        else {
+            pointeur[0] = getpid();
+            printf("Je viens de monter dans l'ascenseur [%d]\n", getpid());
+        }
+
+
+        pause();
+        return 0;
+    }
+    // code père
+    while(n<max){
+        if(semctl(sem_id,0,GETVAL)==0){
+            sleep(1);
+
+            printf("Les ouvriers %i et %i sont en haut\n",pointeur[0],pointeur[1]);
+
+            kill(pointeur[0],SIGUSR1);
+            kill(pointeur[1],SIGUSR1);
+            pointeur[0] = 0;
+            pointeur[1] = 0;
+
+            printf("Ascenseur libre\n");
+            n+=2;
+            if((max%2==1) && (n==max-1)){
+                semctl(sem_id,0,SETVAL,1);
+                printf("prêt à prendre le dernier ouvrier\n");
+            }
+        }
+    }
+    printf("Tous les ouvriers sont au travail, on peut fermer l'ascenceur\n");
+    safeKill(sem_id);
+    shmdt(adresse_segment);
 }
